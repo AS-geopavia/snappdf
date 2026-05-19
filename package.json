@@ -1,0 +1,65 @@
+{
+  "name": "snappdf",
+  "version": "1.0.5",
+  "description": "SnapPDF - Estrai immagini dai PDF con sfondo trasparente",
+  "main": "src/main.js",
+  "author": "SnapPDF Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:css": "tailwindcss -i src/renderer/input.css -o src/renderer/styles.css --minify",
+    "build": "npm run build:css && electron-builder --win nsis --publish never",
+    "release": "npm run build:css && electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "electron-log": "5.4.4",
+    "electron-updater": "6.8.3",
+    "pdfjs-dist": "3.11.174",
+    "utif": "3.1.0"
+  },
+  "devDependencies": {
+    "electron": "33.4.0",
+    "electron-builder": "26.8.1",
+    "tailwindcss": "^3.4.17"
+  },
+  "build": {
+    "appId": "com.snappdf.app",
+    "productName": "SnapPDF",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "artifactName": "SnapPDF-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SnapPDF",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "runAfterFinish": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "AS-geopavia",
+      "repo": "snappdf",
+      "releaseType": "release"
+    },
+    "asar": true
+  }
+}

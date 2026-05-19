@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;" />
+  <title>SnapPDF</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ── Sidebar ────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="vendor/icon.png" alt="SnapPDF" />
+        <div class="min-w-0">
+          <div class="sidebar-brand-name">SnapPDF</div>
+          <div class="sidebar-brand-sub">Estrai immagini dai PDF</div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <nav class="steps">
+        <div class="step" data-step="1">
+          <span class="step-num">1</span>
+          <div>
+            <div class="step-title">Carica PDF</div>
+            <div class="step-sub">Seleziona o trascina</div>
+          </div>
+        </div>
+        <div class="step" data-step="2">
+          <span class="step-num">2</span>
+          <div>
+            <div class="step-title">Configura</div>
+            <div class="step-sub">Formato e cartella</div>
+          </div>
+        </div>
+        <div class="step" data-step="3">
+          <span class="step-num">3</span>
+          <div>
+            <div class="step-title">Estrai</div>
+            <div class="step-sub">Salva immagini</div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-dot"></div>
+        <span id="app-version" class="text-xs text-zinc-500">v1.0.5</span>
+        <button class="btn-about" id="btn-about" title="Informazioni su SnapPDF">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="8" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="12" y1="12" x2="12" y2="16"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── Main ───────────────────────────────────────── -->
+    <main class="main-area">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <div>
+          <h2 id="page-title" class="topbar-title">Cattura immagini dai PDF</h2>
+          <p  id="page-sub"   class="topbar-sub">Trascina i documenti, scegli formato e cartella, poi avvia.</p>
+        </div>
+        <div class="topbar-right">
+          <div class="update-pill hidden" id="update-pill">
+            <span class="update-icon">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M21 12a9 9 0 1 1-3-6.7"/>
+                <polyline points="21 4 21 10 15 10"/>
+              </svg>
+            </span>
+            <span class="update-text" id="update-text">Aggiornamento disponibile</span>
+            <button class="update-btn hidden" id="btn-install-update">Installa</button>
+          </div>
+          <div class="status-badge" id="status-badge">Pronto</div>
+        </div>
+      </header>
+
+      <!-- Content grid -->
+      <section class="content-grid">
+
+        <!-- Drop zone -->
+        <div class="card drop-card" id="drop-zone">
+          <div class="drop-icon-wrap">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M12 12v6"/><path d="M9 15l3-3 3 3"/>
+            </svg>
+          </div>
+          <h3 class="drop-title">Trascina qui i tuoi PDF</h3>
+          <p class="drop-sub">oppure sfoglia dal disco</p>
+          <button class="btn btn-secondary" id="btn-select-pdfs">Sfoglia file</button>
+        </div>
+
+        <!-- Files card -->
+        <div class="card files-card">
+          <div class="card-head">
+            <h3 class="card-title">File caricati</h3>
+            <span class="counter" id="file-counter">0</span>
+            <span class="flex-1"></span>
+          </div>
+          <ul class="file-list" id="file-list">
+            <li class="empty">Nessun file caricato</li>
+          </ul>
+          <div class="card-actions">
+            <button class="btn btn-ghost small" id="btn-clear">Svuota lista</button>
+          </div>
+        </div>
+
+        <!-- Config card -->
+        <div class="card config-card">
+          <div class="card-head">
+            <h3 class="card-title">Impostazioni</h3>
+          </div>
+
+          <!-- Formato -->
+          <div class="config-row">
+            <label class="config-label">Formato output</label>
+            <div class="segmented">
+              <button class="seg-btn active" data-format="png">PNG</button>
+              <button class="seg-btn"        data-format="jpg">JPG</button>
+              <button class="seg-btn"        data-format="tiff">TIFF</button>
+            </div>
+          </div>
+
+          <!-- JPG quality (hidden by default) -->
+          <div class="config-row" id="row-jpg-quality" style="display:none">
+            <label class="config-label">
+              Qualità JPG
+              <span id="jpg-quality-val" class="text-violet-600 font-semibold">92</span>%
+            </label>
+            <input type="range" id="jpg-quality" min="60" max="100" value="92" />
+          </div>
+
+          <!-- Transparent toggle -->
+          <div class="config-row">
+            <label class="config-label">Sfondo bianco → trasparente</label>
+            <label class="switch">
+              <input type="checkbox" id="toggle-transparent" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Threshold -->
+          <div class="config-row">
+            <label class="config-label">
+              Tolleranza
+              <span id="threshold-val" class="text-violet-600 font-semibold">20</span>
+            </label>
+            <input type="range" id="threshold" min="0" max="60" value="20" />
+          </div>
+
+          <!-- Dedup -->
+          <div class="config-row">
+            <label class="config-label">Salta immagini duplicate</label>
+            <label class="switch">
+              <input type="checkbox" id="toggle-dedup" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Min size -->
+          <div class="config-row">
+            <label class="config-label">Dimensione minima</label>
+            <div class="mini-inputs">
+              <input type="number" id="min-width"  min="0" max="9999" value="32" />
+              <span>×</span>
+              <input type="number" id="min-height" min="0" max="9999" value="32" />
+              <span class="text-zinc-400">px</span>
+            </div>
+          </div>
+
+          <!-- Page range -->
+          <div class="config-row" id="page-range-row">
+            <label class="config-label" id="page-range-label">Pagine</label>
+            <input type="text" id="page-range" class="text-input"
+                   placeholder="tutte (es. 1-5,8)" />
+          </div>
+
+          <!-- Folder picker -->
+          <div class="config-row stacked">
+            <label class="config-label">Cartella di destinazione</label>
+            <div class="folder-picker">
+              <input type="text" id="output-folder"
+                     placeholder="Nessuna cartella selezionata" readonly />
+              <button class="btn btn-secondary small" id="btn-select-folder">Scegli…</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action card -->
+        <div class="card action-card">
+          <div class="action-info">
+            <div class="action-title">Pronto ad estrarre?</div>
+            <div class="action-sub" id="action-sub">Aggiungi almeno un PDF e una cartella di destinazione.</div>
+          </div>
+          <div class="action-right">
+            <div class="progress-inline hidden" id="progress-card">
+              <div class="progress-row">
+                <span id="progress-meta" class="truncate max-w-[160px]">In attesa...</span>
+                <span id="progress-percent" class="font-semibold text-violet-600 flex-shrink-0">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+            </div>
+            <button class="btn btn-secondary small hidden" id="btn-open-folder">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              </svg>
+              Apri cartella
+            </button>
+            <button class="btn btn-ghost small hidden" id="btn-cancel">Annulla</button>
+            <button class="btn btn-primary big" id="btn-extract" disabled>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M5 12h14"/><path d="M13 5l7 7-7 7"/>
+              </svg>
+              Avvia estrazione
+            </button>
+          </div>
+        </div>
+
+        <!-- Thumbnail card -->
+        <div class="card thumb-card hidden" id="thumb-card">
+          <div class="card-head">
+            <h3 class="card-title">Anteprime</h3>
+            <span class="thumb-count" id="thumb-count">0</span>
+            <span class="flex-1"></span>
+            <button class="btn btn-ghost small" id="btn-clear-thumbs">Pulisci</button>
+          </div>
+          <div class="thumb-grid" id="thumb-grid"></div>
+        </div>
+
+        <!-- Log card -->
+        <div class="card log-card">
+          <div class="card-head">
+            <h3 class="card-title">Messaggi</h3>
+            <span class="flex-1"></span>
+            <button class="btn btn-ghost small" id="btn-clear-log">Pulisci</button>
+          </div>
+          <div class="log" id="log">
+            <div class="log-item info">
+              <span class="log-time">--:--:--</span>
+              <span class="log-msg">Benvenuto in SnapPDF!</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- About modal -->
+  <div class="about-overlay hidden" id="about-overlay">
+    <div class="about-card">
+      <!-- Header -->
+      <div class="about-header">
+        <img src="vendor/icon.png" alt="SnapPDF" />
+        <div class="about-app-name">SnapPDF</div>
+        <div class="about-app-version" id="about-version">v1.0.5</div>
+        <div class="about-text text-center" style="font-size:13px;color:#71717a;">
+          Estrai immagini dai PDF in un clic.<br/>Progettato per Windows.
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="about-body">
+
+        <!-- Author -->
+        <div>
+          <div class="about-section-title">Autore</div>
+          <div class="about-text">
+            <strong>AS-geopavia</strong><br/>
+            <span style="color:#a1a1aa;font-size:13px;">github.com/AS-geopavia/snappdf</span>
+          </div>
+        </div>
+
+        <!-- Components -->
+        <div>
+          <div class="about-section-title">Componenti open-source</div>
+          <div class="about-components">
+            <div class="about-component-row">
+              <span class="about-component-name">Electron</span>
+              <span class="about-component-ver">v33</span>
+            </div>
+            <div class="about-component-row">
+              <span class="about-component-name">PDF.js</span>
+              <span class="about-component-ver">v3 (Mozilla)</span>
+            </div>
+            <div class="about-component-row">
+              <span class="about-component-name">UTIF.js</span>
+              <span class="about-component-ver">TIFF decode</span>
+            </div>
+            <div class="about-component-row">
+              <span class="about-component-name">Tailwind CSS</span>
+              <span class="about-component-ver">v3.4</span>
+            </div>
+            <div class="about-component-row">
+              <span class="about-component-name">electron-updater</span>
+              <span class="about-component-ver">v6.3</span>
+            </div>
+            <div class="about-component-row">
+              <span class="about-component-name">electron-builder</span>
+              <span class="about-component-ver">NSIS installer</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="about-footer">
+        <span class="about-license-badge">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Licenza MIT
+        </span>
+        <button class="about-close-btn" id="btn-about-close">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox overlay -->
+  <div class="lightbox hidden" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close" title="Chiudi (Esc)">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <img class="lightbox-img" id="lightbox-img" alt="" />
+    <div class="lightbox-label" id="lightbox-label"></div>
+  </div>
+
+  <script defer src="vendor/pdf.js"></script>
+  <script defer src="vendor/utif.js"></script>
+  <script defer src="renderer.js"></script>
+</body>
+</html>
